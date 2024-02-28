@@ -1,0 +1,129 @@
+x-common-account: &common-account
+  env_file:
+    - ./app/.env.common
+
+volumes:
+  postgres: { }
+  pgadmin: { }
+
+services:
+  traefik:
+    image: traefik:v3.0
+    command:
+      - --log.level=DEBUG
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.http.address=:80
+      - --ping=true
+      - --api
+    ports:
+      - published: 80
+        target: 80
+        mode: host
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      traefik: { }
+    deploy: &labels
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik
+        - traefik.constraint-label=traefik
+        - traefik.http.routers.api.service=api@internal
+        - traefik.http.services.dummy-svc.loadbalancer.server.port=9000
+        # HTTP
+        - traefik.http.routers.api.rule=Host(`traefik.${BASE_DOMAIN?}`)
+    <<: *labels
+
+  api-vendor-installer:
+    build:
+      context: ./utils/composer
+    volumes:
+      - ./app:/app
+    <<: *common-account
+
+  api-server:
+    build:
+      target: server-develop
+      dockerfile: ./app/Dockerfile
+    volumes:
+      - ./app:/app
+    networks:
+      traefik: { }
+      default: { }
+    depends_on:
+      api-migrator:
+        condition: service_completed_successfully
+      traefik:
+        condition: service_started
+    deploy:
+      labels: &labels
+        - traefik.enable=true
+        - traefik.docker.network=traefik
+        - traefik.constraint-label=traefik
+        - traefik.http.routers.${COMPOSE_PROJECT_NAME?}-account-server.rule=Host(`${API_SERVER_HOST?}`) && PathPrefix(`${API_SERVER_PATH_PREFIX?}`)
+        - traefik.http.services.${COMPOSE_PROJECT_NAME?}-account-server.loadbalancer.server.port=8000
+    labels: *labels
+    <<: *common-account
+
+  api-database:
+    image: postgres:15.3-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready --username=$${POSTGRES_USER?} --dbname=$${POSTGRES_DB?}
+      interval: 3s
+      timeout: 3s
+      retries: 8
+    environment:
+      POSTGRES_DB: ${API_DATABASE_NAME:-api}
+      POSTGRES_USER: ${API_DATABASE_USER:-user}
+      POSTGRES_PASSWORD: ${API_DATABASE_PASSWORD?}
+    volumes:
+      - postgres:/data/postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL?}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD?}
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    configs:
+      - source: pgadmin
+        target: /pgadmin4/servers.json
+    networks:
+      traefik: { }
+      default: { }
+    depends_on:
+      api-database:
+        condition: service_healthy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.constraint-label=traefik
+      # http
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME?}-pgadmin.rule=Host(`${PGADMIN_HOST?}`)
+      - traefik.http.services.${COMPOSE_PROJECT_NAME?}-pgadmin.loadbalancer.server.port=80
+    restart: unless-stopped
+
+  api-migrator:
+    build:
+      target: cli-develop
+      dockerfile: ./app/Dockerfile
+    volumes:
+      - ./app:/app
+    depends_on:
+      api-database:
+        condition: service_healthy
+    restart: on-failure
+    <<: *common-account
+    command: migrate --seed
+
+networks:
+  traefik:
+    name: traefik
+
+configs:
+  pgadmin:
+    file: ./utils/pgadmin/servers.json
