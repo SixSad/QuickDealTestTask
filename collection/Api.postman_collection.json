@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "92e62b79-1db3-4509-9729-385ff0dd3dbf",
-		"name": "Api",
+		"_postman_id": "c98f4da3-b9d1-440e-a292-b8bb1606453b",
+		"name": "Api Copy",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "19170230",
-		"_collection_link": "https://www.postman.com/sixsad/workspace/quickdealtesttask/collection/19170230-92e62b79-1db3-4509-9729-385ff0dd3dbf?action=share&source=collection_link&creator=19170230"
+		"_collection_link": "https://www.postman.com/sixsad/workspace/quickdealtesttask/collection/19170230-c98f4da3-b9d1-440e-a292-b8bb1606453b?action=share&source=collection_link&creator=19170230"
 	},
 	"item": [
 		{
@@ -12,6 +12,25 @@
 			"item": [
 				{
 					"name": "index",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/{{apiRoute}}/tasks",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"{{apiRoute}}",
+								"tasks"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "show",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -31,10 +50,19 @@
 					"response": []
 				},
 				{
-					"name": "show",
+					"name": "store",
 					"request": {
-						"method": "GET",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"title\",\n    \"status\": \"new\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
 							"raw": "{{protocol}}://{{host}}/{{apiRoute}}/tasks",
 							"protocol": "{{protocol}}",
@@ -50,18 +78,22 @@
 					"response": []
 				},
 				{
-					"name": "store",
-					"request": {
-						"method": "POST",
-						"header": []
-					},
-					"response": []
-				},
-				{
 					"name": "delete",
 					"request": {
 						"method": "DELETE",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "{{protocol}}://{{host}}/{{apiRoute}}/tasks/1",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"{{apiRoute}}",
+								"tasks",
+								"1"
+							]
+						}
 					},
 					"response": []
 				},
@@ -69,7 +101,28 @@
 					"name": "update",
 					"request": {
 						"method": "PUT",
-						"header": []
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"in_progress\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{protocol}}://{{host}}/{{apiRoute}}/tasks/2",
+							"protocol": "{{protocol}}",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"{{apiRoute}}",
+								"tasks",
+								"2"
+							]
+						}
 					},
 					"response": []
 				}
@@ -79,7 +132,17 @@
 			"name": "check",
 			"request": {
 				"method": "GET",
-				"header": []
+				"header": [],
+				"url": {
+					"raw": "{{protocol}}://{{host}}/{{apiRoute}}",
+					"protocol": "{{protocol}}",
+					"host": [
+						"{{host}}"
+					],
+					"path": [
+						"{{apiRoute}}"
+					]
+				}
 			},
 			"response": []
 		}

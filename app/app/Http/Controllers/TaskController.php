@@ -50,7 +50,7 @@ class TaskController extends Controller
      */
     public function show(int $id): TaskResource
     {
-        $task = Task::query()->find($id);
+        $task = Task::query()->findOrFail($id);
         return new TaskResource($task);
     }
 
