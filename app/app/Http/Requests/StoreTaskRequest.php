@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 class StoreTaskRequest extends FormRequest
 {
 
-    public function authorize(): true
+    public function authorize(): bool
     {
         return true;
     }
@@ -19,7 +19,6 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id' => ['integer', 'exists:tasks,id'],
             'name' => ['string', 'required', 'max:256'],
             'status' => ['string', Rule::enum(Status::class)]
         ];
