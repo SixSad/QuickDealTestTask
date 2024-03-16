@@ -35,8 +35,7 @@ RUN apt-get update; \
     apt-get install -yqq --no-install-recommends --show-progress \
           libpq-dev ${APT_INSTALL_PACKAGES}
 RUN docker-php-ext-install \
-        pdo_pgsql \
-        pgsql \
+        pdo_mysql \
         sockets \
         pcntl ${PHP_INSTALL_EXTENDS}
 

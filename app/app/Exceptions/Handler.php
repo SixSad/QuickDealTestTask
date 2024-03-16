@@ -3,8 +3,10 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Throwable;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -35,6 +37,8 @@ class Handler extends ExceptionHandler
      */
     public function register()
     {
+        $statusCodes = Response::$statusTexts;
+
         $this->renderable(function (NotFoundHttpException $e, $request) {
             if ($request->is('api/*')) {
                 return response()->json([
@@ -43,6 +47,26 @@ class Handler extends ExceptionHandler
             }
         });
 
+        $this->renderable(function (\Exception $e, Request $request) use ($statusCodes) {
+
+            if (!array_key_exists($e->getCode(), $statusCodes)) {
+                $data['message'] = 'Server error';
+                $errorCode = 500;
+            } else {
+                $data['message'] = $e->getMessage();
+                $errorCode = $e->getCode();
+            }
+
+            if (env('APP_DEBUG')) {
+                $data['trace'] = $e->getTrace();
+            }
+
+            if ($request->is('api/*')) {
+                return response()->json($data, $errorCode);
+            }
+        });
+
 
     }
 }
+
