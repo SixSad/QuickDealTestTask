@@ -2,7 +2,7 @@
 
 namespace App\Http\DTO;
 
-readonly class UserObject
+readonly class UserObject extends BaseDTO
 {
     public function __construct(
         public ?int    $id = null,
@@ -11,11 +11,4 @@ readonly class UserObject
     {
     }
 
-    public function toArray(): array
-    {
-        return [
-            'id' => $this?->id,
-            'email' => $this?->email,
-        ];
-    }
 }

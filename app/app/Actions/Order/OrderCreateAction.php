@@ -3,47 +3,57 @@
 namespace App\Actions\Order;
 
 use App\Actions\Balance\ChangeBalanceAction;
+use App\Contracts\Order\OrderCreate;
+use App\Exceptions\UnableToCreateException;
+use App\Http\DTO\OrderDTO;
+use App\Models\Cart;
 use App\Models\Order;
 use App\Models\User;
-use Throwable;
+use Exception;
 
-class OrderCreateAction
+readonly class OrderCreateAction implements OrderCreate
 {
 
     public function __construct(
-        private readonly ChangeBalanceAction $changeBalanceAction
+        private ChangeBalanceAction $changeBalanceAction
     )
     {
     }
 
     /**
-     * @throws Throwable
+     * @throws UnableToCreateException
      */
-    public function __invoke(User $user): Order
+    public function __invoke(OrderDTO $orderDTO): Order
     {
-        $userCart = $user->cart;
+        try {
+            /** @var Cart $userCart */
+            $userCart = Cart::query()->findOrFail($orderDTO->cartId);
 
-        throw_if(
-            $userCart->total_price <= 0,
-            new \Exception('Cart is empty', 405)
-        );
+            /** @var User $user */
+            $user = User::query()->findOrFail($orderDTO->userId);
 
-        throw_if(
-            $user->balance->balance < $userCart->total_price,
-            new \Exception('Not enough balance', 405)
-        );
+            if (
+                $userCart->total_price <= 0
+                || $user->balance->balance < $userCart->total_price
+            ) {
+                throw new Exception();
 
-        /** @var Order $order */
-        $order = Order::query()
-            ->create([
-                'user_id' => $user->id,
-                'cart_id' => $userCart->id,
-                'total_price' => $userCart->total_price
-            ]);
+            }
 
-        ($this->changeBalanceAction)($user->id, $userCart->total_price, false);
+            /** @var Order $order */
+            $order = Order::query()
+                ->create([
+                    'user_id' => $user->id,
+                    'cart_id' => $userCart->id,
+                    'total_price' => $userCart->total_price
+                ]);
 
-        return $order;
+            ($this->changeBalanceAction)($user->balance, $userCart->total_price, false);
+
+            return $order;
+        } catch (Exception) {
+            throw new UnableToCreateException();
+        }
     }
 
 }

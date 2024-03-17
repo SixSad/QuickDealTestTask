@@ -3,26 +3,40 @@
 namespace App\Actions\Order;
 
 use App\Actions\Balance\ChangeBalanceAction;
+use App\Contracts\Order\OrderDelete;
+use App\Exceptions\UnableToDeleteException;
+use App\Http\DTO\OrderDTO;
 use App\Models\Order;
 use App\Models\User;
+use Exception;
 
-class OrderDeleteAction
+readonly class OrderDeleteAction implements OrderDelete
 {
 
     public function __construct(
-        private readonly ChangeBalanceAction $changeBalanceAction
+        private ChangeBalanceAction $changeBalanceAction
     )
     {
     }
 
-    public function __invoke(User $user, int $orderId): bool
+    /**
+     * @throws UnableToDeleteException
+     */
+    public function __invoke(OrderDTO $orderDTO): bool
     {
-        /** @var Order $order */
-        $order = Order::query()->findOrFail($orderId);
+        try {
+            /** @var Order $order */
+            $order = Order::query()->findOrFail($orderDTO->id);
 
-        if (!$order->delete()) return false;
+            /** @var User $user */
+            $user = User::query()->findOrFail($orderDTO->userId);
 
-        ($this->changeBalanceAction)($user->id, $order->total_price);
+            if (!$order->delete()) throw new Exception();
+
+            ($this->changeBalanceAction)($user->balance, $order->total_price, true);
+        } catch (Exception) {
+            throw new UnableToDeleteException();
+        }
 
         return true;
     }

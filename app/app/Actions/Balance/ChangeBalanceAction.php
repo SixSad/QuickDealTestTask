@@ -2,23 +2,29 @@
 
 namespace App\Actions\Balance;
 
+use App\Exceptions\UnableToUpdateException;
 use App\Models\Balance;
+use Exception;
 
 class ChangeBalanceAction
 {
 
-    public function __invoke(int $userId, int $sum, bool $replenishment = true): bool
+    /**
+     * @throws UnableToUpdateException
+     */
+    public function __invoke(Balance $balance, float $sum, bool $replenishment): bool
     {
-        /** @var Balance $balance */
-        $balance = Balance::query()
-            ->where('user_id', $userId)
-            ->firstOrFail();
+        try {
+            $replenishment
+                ? $balance->balance += $sum
+                : $balance->balance -= $sum;
 
-        $replenishment
-            ? $balance->balance += $sum
-            : $balance->balance -= $sum;
+            if (!$balance->save()) throw new Exception();
 
-        return $balance->save();
+            return true;
+        } catch (Exception) {
+            throw new UnableToUpdateException();
+        }
     }
 
 }

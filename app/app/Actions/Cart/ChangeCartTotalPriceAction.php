@@ -2,20 +2,23 @@
 
 namespace App\Actions\Cart;
 
+use App\Exceptions\UnableToUpdateException;
 use App\Models\Cart;
+use Exception;
 
 class ChangeCartTotalPriceAction
 {
 
-    public function __invoke(int $cartId, float $sum, $add = true): bool
+    /**
+     * @throws UnableToUpdateException
+     */
+    public function __invoke(Cart $cart, float $sum, $add = true): bool
     {
         try {
-            /** @var Cart $cart */
-            $cart = Cart::query()->findOrFail($cartId);
             $add ? $cart->total_price += $sum : $cart->total_price -= $sum;
-            $cart->save();
-        } catch (\Exception) {
-            return false;
+            if (!$cart->save()) throw new Exception();
+        } catch (Exception) {
+            throw new UnableToUpdateException();
         }
 
         return true;

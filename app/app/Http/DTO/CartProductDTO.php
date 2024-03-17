@@ -2,7 +2,7 @@
 
 namespace App\Http\DTO;
 
-readonly class CartProductDTO
+readonly class CartProductDTO extends BaseDTO
 {
     public function __construct(
         public ?int    $cart_id = null,
@@ -11,11 +11,4 @@ readonly class CartProductDTO
     {
     }
 
-    public function toArray(): array
-    {
-        return [
-            'cart_id' => $this?->cart_id,
-            'product_id' => $this?->product_id,
-        ];
-    }
 }
